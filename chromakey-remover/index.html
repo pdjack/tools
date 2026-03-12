@@ -86,6 +86,19 @@
   .color-picker-row {
     display: flex; align-items: center; gap: 10px;
   }
+  .btns-row {
+    display: flex; gap: 8px; margin-bottom: 2px;
+  }
+  .btn-eye-dropper {
+    width: 40px; height: 40px; border-radius: 8px;
+    border: 2px solid #0f3460; background: #1a1a2e;
+    color: #888; cursor: pointer; display: flex;
+    align-items: center; justify-content: center;
+    font-size: 1.2rem; transition: all 0.2s;
+  }
+  .btn-eye-dropper:hover { border-color: #e94560; color: #e94560; }
+  .btn-eye-dropper.active { background: #e94560; color: #fff; border-color: #e94560; }
+  
   .color-preview {
     width: 40px; height: 40px; border-radius: 8px;
     border: 2px solid #0f3460; flex-shrink: 0;
@@ -191,6 +204,21 @@
     vertical-align: middle; margin-right: 6px;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* 모드 선택 */
+  .mode-select {
+    display: flex; gap: 4px; background: #1a1a2e; padding: 4px; border-radius: 8px; margin-bottom: 20px;
+  }
+  .mode-btn {
+    flex: 1; padding: 10px; border: none; background: none; color: #888; cursor: pointer;
+    font-size: 0.82rem; font-weight: 600; border-radius: 6px; transition: all 0.2s;
+  }
+  .mode-btn.active { background: #e94560; color: #fff; }
+
+  #standardControls, #corridorControls {
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .hidden { display: none !important; }
 </style>
 </head>
 <body>
@@ -223,8 +251,13 @@
         <button class="preset-btn" style="background:#000000" data-rgb="0,0,0" title="검정"></button>
       </div>
       <div class="color-picker-row">
-        <div class="color-preview" id="colorPreview" style="background:#00ff00">
-          <input type="color" id="colorPicker" value="#00ff00">
+        <div class="btns-row">
+          <div class="color-preview" id="colorPreview" style="background:#00ff00">
+            <input type="color" id="colorPicker" value="#00ff00">
+          </div>
+          <button class="btn-eye-dropper" id="eyeDropperBtn" title="이미지에서 색상 추출 (스포이드)">
+            💧
+          </button>
         </div>
         <div style="flex:1">
           <div class="rgb-inputs">
@@ -240,7 +273,13 @@
     </div>
 
     <h2>설정</h2>
-    <div class="slider-group">
+    <div class="mode-select">
+      <button class="mode-btn active" data-mode="standard">표준 모드</button>
+      <button class="mode-btn" data-mode="corridorkey">CorridorKey</button>
+    </div>
+
+    <!-- 표준 설정 -->
+    <div id="standardControls">
       <div class="slider-item">
         <label>허용 범위 <span id="tolVal">60</span></label>
         <input type="range" id="tolerance" min="0" max="200" value="60">
@@ -250,6 +289,25 @@
         <label>경계 부드럽게 <span id="featherVal">5</span></label>
         <input type="range" id="feather" min="0" max="80" value="5">
         <div class="slider-desc">높을수록 가장자리가 자연스럽게 처리됩니다</div>
+      </div>
+    </div>
+
+    <!-- CorridorKey 설정 -->
+    <div id="corridorControls" class="hidden">
+      <div class="slider-item">
+        <label>강도 (Gain) <span id="gainVal">1.5</span></label>
+        <input type="range" id="gain" min="0" max="40" step="0.1" value="1.5">
+        <div class="slider-desc">매트의 강도를 조절합니다</div>
+      </div>
+      <div class="slider-item">
+        <label>블랙 포인트 <span id="blackVal">0.0</span></label>
+        <input type="range" id="blackPoint" min="-1" max="1" step="0.05" value="0.0">
+        <div class="slider-desc">배경의 불투명도를 미세 조정합니다</div>
+      </div>
+      <div class="slider-item">
+        <label>Despill (색상 교정) <span id="despillVal">1.0</span></label>
+        <input type="range" id="despill" min="0" max="2" step="0.05" value="1.0">
+        <div class="slider-desc">초록색 번짐 현상을 억제합니다</div>
       </div>
     </div>
 
@@ -297,11 +355,87 @@
   const imgInfo = document.getElementById('imgInfo');
   const colorPicker = document.getElementById('colorPicker');
   const colorPreview = document.getElementById('colorPreview');
+  const eyeDropperBtn = document.getElementById('eyeDropperBtn');
   const rVal = document.getElementById('rVal');
   const gVal = document.getElementById('gVal');
   const bVal = document.getElementById('bVal');
   const tolerance = document.getElementById('tolerance');
   const feather = document.getElementById('feather');
+  const gain = document.getElementById('gain');
+  const blackPoint = document.getElementById('blackPoint');
+  const despill = document.getElementById('despill');
+  
+  let currentMode = 'standard';
+  let isEyeDropping = false;
+
+  // 스포이드 활성화
+  eyeDropperBtn.addEventListener('click', () => {
+    if (!currentFile) return;
+    isEyeDropping = !isEyeDropping;
+    eyeDropperBtn.classList.toggle('active', isEyeDropping);
+    previewImg.style.cursor = isEyeDropping ? 'crosshair' : '';
+    
+    if (isEyeDropping && currentTab !== 'original') {
+        const originalTabBtn = document.querySelector('.tab-btn[data-tab="original"]');
+        originalTabBtn.click();
+    }
+    
+    if (isEyeDropping) {
+        statusText.textContent = '이미지에서 색상을 클릭하여 추출하세요';
+    } else {
+        statusText.textContent = '스포이드 종료';
+    }
+  });
+
+  // 이미지 클릭 - 색상 추출
+  previewImg.addEventListener('click', (e) => {
+    if (!isEyeDropping || !originalSrc) return;
+    
+    const rect = previewImg.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * previewImg.naturalWidth;
+    const y = ((e.clientY - rect.top) / rect.height) * previewImg.naturalHeight;
+    
+    const canvas = document.createElement('canvas');
+    canvas.width = previewImg.naturalWidth;
+    canvas.height = previewImg.naturalHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(previewImg, 0, 0);
+    
+    const pixel = ctx.getImageData(x, y, 1, 1).data;
+    rVal.value = pixel[0];
+    gVal.value = pixel[1];
+    bVal.value = pixel[2];
+    
+    updateColorFromRGB();
+    
+    // 추출 후 자동 종료 및 미리보기
+    isEyeDropping = false;
+    eyeDropperBtn.classList.remove('active');
+    previewImg.style.cursor = '';
+    
+    const resultTabBtn = document.querySelector('.tab-btn[data-tab="result"]');
+    resultTabBtn.click();
+    previewBtn.click();
+  });
+
+  // 모드 전환
+  document.querySelectorAll('.mode-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentMode = btn.dataset.mode;
+      
+      const std = document.getElementById('standardControls');
+      const corr = document.getElementById('corridorControls');
+      if (currentMode === 'corridorkey') {
+        std.classList.add('hidden');
+        corr.classList.remove('hidden');
+      } else {
+        std.classList.remove('hidden');
+        corr.classList.add('hidden');
+      }
+    });
+  });
 
   // 드래그앤드롭
   dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag'); });
@@ -370,6 +504,9 @@
   // 슬라이더
   tolerance.addEventListener('input', () => document.getElementById('tolVal').textContent = tolerance.value);
   feather.addEventListener('input', () => document.getElementById('featherVal').textContent = feather.value);
+  gain.addEventListener('input', () => document.getElementById('gainVal').textContent = gain.value);
+  blackPoint.addEventListener('input', () => document.getElementById('blackVal').textContent = blackPoint.value);
+  despill.addEventListener('input', () => document.getElementById('despillVal').textContent = despill.value);
 
   // 탭 전환
   document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -444,11 +581,19 @@
   function buildFormData() {
     const form = new FormData();
     form.append('image', currentFile);
+    form.append('mode', currentMode);
     form.append('r', rVal.value);
     form.append('g', gVal.value);
     form.append('b', bVal.value);
-    form.append('tolerance', tolerance.value);
-    form.append('feather', feather.value);
+    
+    if (currentMode === 'corridorkey') {
+      form.append('gain', gain.value);
+      form.append('black_point', blackPoint.value);
+      form.append('despill', despill.value);
+    } else {
+      form.append('tolerance', tolerance.value);
+      form.append('feather', feather.value);
+    }
     return form;
   }
 
