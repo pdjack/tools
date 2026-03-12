@@ -43,8 +43,35 @@ body {
 }
 
 header {
-    text-align: center;
     margin-bottom: 40px;
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.logo-area {
+    text-align: left;
+}
+
+.nav-home {
+    background: rgba(99, 102, 241, 0.1);
+    color: var(--primary-color);
+    text-decoration: none;
+    padding: 10px 20px;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    transition: all 0.2s;
+}
+
+.nav-home:hover {
+    background: var(--primary-color);
+    color: white;
 }
 
 header h1 {

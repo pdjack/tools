@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solo Dev Tools | Elevate Your Game Development</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav>
+        <div class="container nav-content">
+            <div class="logo">SOLO DEV TOOLS</div>
+            <div class="nav-links">
+                <a href="#home">Home</a>
+                <a href="#tools">Tools</a>
+                <a href="https://github.com/pdjack/tools" target="_blank">GitHub</a>
+            </div>
+        </div>
+    </nav>
+
+    <section class="hero" id="home">
+        <img src="hero.png" alt="Hero Background" class="hero-bg">
+        <div class="container hero-content">
+            <h1>The Ultimate Toolkit for <span>Solo Game Devs</span></h1>
+            <p>Skip the tedious work. We provide ready-to-use tools to help you focus on what matters: making your game fun.</p>
+            <a href="#tools" class="btn btn-primary">Explore Tools</a>
+        </div>
+    </section>
+
+    <section class="tools-section" id="tools">
+        <div class="container">
+            <div class="section-header">
+                <h2>Powerful Specialized Tools</h2>
+                <p>Designed for efficiency, simplicity, and performance.</p>
+            </div>
+            
+            <div class="tools-grid">
+                <!-- Tool 1: Chromakey Remover -->
+                <article class="tool-card">
+                    <span class="tool-icon">🎨</span>
+                    <h3>Chromakey Remover</h3>
+                    <p>Instantly remove backgrounds from your images using advanced color-keying algorithms. Perfect for character sprites and UI elements.</p>
+                    <a href="chromakey-remover/index.html" class="btn btn-outline" id="link-chromakey">Launch Tool</a>
+                </article>
+
+                <!-- Tool 2: Sound Editor -->
+                <article class="tool-card">
+                    <span class="tool-icon">🔊</span>
+                    <h3>Premium Sound Editor</h3>
+                    <p>A lightweight, browser-based audio editor. Trim, cut, and export your sound effects with visual waveform precision.</p>
+                    <a href="sound-editor/index.html" class="btn btn-outline" id="link-sound">Launch Tool</a>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container footer-content">
+            <p>&copy; 2026 Solo Dev Tools. Built for developers, by developers.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Smooth scroll for anchors
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+
+        // Add scroll class to nav
+        window.addEventListener('scroll', () => {
+            const nav = document.querySelector('nav');
+            if (window.scrollY > 50) {
+                nav.style.background = 'rgba(10, 10, 12, 0.9)';
+            } else {
+                nav.style.background = 'transparent';
+            }
+        });
+    </script>
+</body>
+</html>
