@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium Sound Editor</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/wavesurfer.js@7/dist/wavesurfer.min.js"></script>
+    <script src="https://unpkg.com/wavesurfer.js@7/dist/plugins/regions.min.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <h1>Sound Editor</h1>
+            <p>간단하고 강력한 사운드 편집 툴</p>
+        </header>
+
+        <main>
+            <section class="upload-section" id="drop-zone">
+                <input type="file" id="file-input" accept="audio/*" hidden>
+                <div class="upload-content">
+                    <div class="icon-upload"></div>
+                    <p>사운드 파일을 드래그하여 놓거나 클릭하여 업로드하세요</p>
+                    <button class="btn btn-primary" onclick="document.getElementById('file-input').click()">파일 선택</button>
+                </div>
+            </section>
+
+            <section class="editor-section hidden" id="editor-container">
+                <div id="waveform-container">
+                    <div id="waveform"></div>
+                    <div id="timeline"></div>
+                </div>
+
+                <div class="controls-container">
+                    <div class="playback-controls">
+                        <button id="btn-play-pause" class="btn btn-icon" title="재생/일시정지">
+                            <span class="icon-play"></span>
+                        </button>
+                        <button id="btn-stop" class="btn btn-icon" title="정지">
+                            <span class="icon-stop"></span>
+                        </button>
+                    </div>
+
+                    <div class="edit-controls">
+                        <button id="btn-trim" class="btn btn-secondary">선택 영역 잘라내기</button>
+                        <button id="btn-download" class="btn btn-success">내보내기 (Export)</button>
+                    </div>
+                </div>
+
+                <div class="info-section">
+                    <div class="info-item">
+                        <span class="label">파일 이름:</span>
+                        <span id="file-name">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">선택 구간:</span>
+                        <span id="selection-range">전체</span>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>&copy; 2026 Sound Editor Tool. All rights reserved.</p>
+        </footer>
+    </div>
+    <script src="main.js"></script>
+</body>
+</html>
