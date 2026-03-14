@@ -126,6 +126,14 @@ def sound_editor_files(path):
 def sound_editor_index():
     return send_file("sound-editor/index.html")
 
+@app.route("/image-cropper/<path:path>")
+def image_cropper_files(path):
+    return send_from_directory("image-cropper", path)
+
+@app.route("/image-cropper/")
+def image_cropper_index():
+    return send_file("image-cropper/index.html")
+
 @app.route("/<path:path>")
 def root_files(path):
     return send_from_directory(".", path)

@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>이미지 자르기 & 크기 조절</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #1a1a2e; color: #e0e0e0; min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center;
+  }
+  header {
+    width: 100%; padding: 16px 32px;
+    background: #16213e;
+    border-bottom: 1px solid #0f3460;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .nav-home {
+    background: rgba(233, 69, 96, 0.1);
+    color: #e94560;
+    text-decoration: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border: 1px solid rgba(233, 69, 96, 0.3);
+    transition: all 0.2s;
+  }
+  .nav-home:hover {
+    background: #e94560;
+    color: #fff;
+  }
+  .logo-area h1 { font-size: 1.4rem; color: #e94560; }
+  .logo-area p { font-size: 0.82rem; color: #888; margin-top: 2px; }
+
+  .container {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 24px;
+    padding: 24px 32px;
+    width: 100%; max-width: 1400px;
+    flex: 1;
+  }
+
+  /* ─── 왼쪽 패널 ─── */
+  .panel {
+    background: #16213e;
+    border-radius: 12px;
+    padding: 24px;
+    border: 1px solid #0f3460;
+    display: flex; flex-direction: column; gap: 20px;
+    height: fit-content;
+  }
+  .panel h2 { font-size: 0.95rem; color: #aaa; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 4px; border-bottom: 1px solid #0f3460; padding-bottom: 8px; }
+
+  /* 드롭존 */
+  .dropzone {
+    border: 2px dashed #0f3460;
+    border-radius: 8px;
+    padding: 24px 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .2s, background .2s;
+    position: relative;
+  }
+  .dropzone:hover, .dropzone.drag { border-color: #e94560; background: #1a1a3e; }
+  .dropzone input[type=file] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer;
+  }
+  .dropzone .icon { font-size: 2rem; margin-bottom: 8px; }
+  .dropzone p { font-size: 0.85rem; color: #888; }
+  .dropzone .filename { color: #e94560; font-size: 0.85rem; margin-top: 6px; word-break: break-all; }
+
+  /* 입력 그룹 */
+  .input-group {
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  
+  .input-row {
+    display: flex; gap: 12px; align-items: center;
+  }
+  
+  .input-item {
+    display: flex; flex-direction: column; gap: 4px; flex: 1;
+  }
+  
+  .input-item label {
+    font-size: 0.75rem; color: #888;
+  }
+  
+  .input-item input[type=number] {
+    width: 100%; padding: 8px; border-radius: 6px;
+    border: 1px solid #0f3460; background: #1a1a2e;
+    color: #e0e0e0; font-size: 0.9rem; text-align: center;
+  }
+  .input-item input[type=number]:focus {
+    border-color: #e94560; outline: none;
+  }
+
+  .checkbox-group {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 0.85rem; color: #ccc; cursor: pointer;
+    margin-top: -4px;
+  }
+  .checkbox-group input[type=checkbox] {
+    accent-color: #e94560;
+    width: 16px; height: 16px; cursor: pointer;
+  }
+
+  /* 비율 프리셋 */
+  .ratio-presets {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+  }
+  .ratio-btn {
+    padding: 8px; border-radius: 6px; border: 1px solid #0f3460; background: #1a1a2e;
+    color: #888; cursor: pointer; font-size: 0.8rem; transition: all 0.2s;
+    text-align: center;
+  }
+  .ratio-btn.active {
+    background: rgba(233, 69, 96, 0.2); border-color: #e94560; color: #fff;
+  }
+  .ratio-btn:hover:not(.active) {
+    background: #1f2a4a; color: #fff;
+  }
+
+  /* 버튼 */
+  .btn-group { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+  .btn {
+    padding: 12px; border-radius: 8px; border: none;
+    font-size: 0.9rem; font-weight: 600; cursor: pointer;
+    transition: opacity .15s, transform .1s; display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn:active { transform: scale(.97); }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+  .btn-primary { background: #e94560; color: #fff; }
+  .btn-secondary { background: #0f3460; color: #e0e0e0; }
+  .btn-primary:hover:not(:disabled) { opacity: .85; }
+  .btn-secondary:hover:not(:disabled) { background: #1f2a4a; }
+
+  /* ─── 오른쪽 프리뷰 ─── */
+  .preview-panel {
+    background: #16213e;
+    border-radius: 12px;
+    border: 1px solid #0f3460;
+    display: flex; flex-direction: column;
+    min-height: 500px; overflow: hidden;
+  }
+  .preview-toolbar {
+    padding: 12px 20px; border-bottom: 1px solid #0f3460;
+    display: flex; gap: 12px; background: #111a30;
+  }
+  .toolbar-btn {
+    background: none; border: 1px solid #0f3460; color: #aaa; border-radius: 6px; width: 32px; height: 32px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;
+  }
+  .toolbar-btn:hover:not(:disabled) {
+    color: #fff; border-color: #555; background: #1a1a2e;
+  }
+  .toolbar-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  .preview-content {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    padding: 24px; position: relative;
+    background-image:
+      linear-gradient(45deg, #222 25%, transparent 25%),
+      linear-gradient(-45deg, #222 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #222 75%),
+      linear-gradient(-45deg, transparent 75%, #222 75%);
+    background-size: 20px 20px;
+    background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+    background-color: #1a1a2e;
+  }
+  .preview-area {
+    width: 100%; height: 100%; max-height: 600px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  img#imageToCrop {
+    max-width: 100%; max-height: 600px; display: none;
+  }
+  
+  .placeholder {
+    text-align: center; color: #555;
+  }
+  .placeholder .icon { font-size: 3rem; margin-bottom: 16px; }
+  .placeholder p { font-size: 0.95rem; }
+
+  .status-bar {
+    padding: 10px 20px;
+    border-top: 1px solid #0f3460; background: #111a30;
+    font-size: 0.8rem; color: #666;
+    display: flex; justify-content: space-between;
+  }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo-area">
+    <h1>이미지 자르기 & 크기 조절</h1>
+    <p>브라우저에서 쉽고 빠르게 이미지를 자르고 크기를 변경하세요</p>
+  </div>
+  <a href="/" class="nav-home">홈으로 가기</a>
+</header>
+
+<div class="container">
+  <!-- 왼쪽 패널 -->
+  <div class="panel">
+    <div>
+      <h2>1. 이미지 업로드</h2>
+      <div class="dropzone" id="dropzone">
+        <input type="file" id="fileInput" accept="image/png, image/jpeg, image/webp, image/gif">
+        <div class="icon">🖼️</div>
+        <p>클릭하거나 파일을 드래그하세요</p>
+        <div class="filename" id="filename"></div>
+      </div>
+    </div>
+
+    <div>
+      <h2>2. 자르기 비율</h2>
+      <div class="ratio-presets">
+        <button class="ratio-btn active" data-ratio="NaN">자유형 (Free)</button>
+        <button class="ratio-btn" data-ratio="1">1:1 (정사각형)</button>
+        <button class="ratio-btn" data-ratio="1.7777777777777777">16:9 (와이드)</button>
+        <button class="ratio-btn" data-ratio="1.3333333333333333">4:3 (일반)</button>
+        <button class="ratio-btn" data-ratio="0.5625">9:16 (세로형)</button>
+        <button class="ratio-btn" data-ratio="0.75">3:4 (사진)</button>
+      </div>
+    </div>
+
+    <div>
+      <h2>3. 최종 크기 조절 (리사이즈)</h2>
+      <div class="input-group">
+        <div class="input-row">
+          <div class="input-item">
+            <label>가로 (Width, px)</label>
+            <input type="number" id="targetWidth" placeholder="원본">
+          </div>
+          <div style="color: #666; padding-top: 20px;">✕</div>
+          <div class="input-item">
+            <label>세로 (Height, px)</label>
+            <input type="number" id="targetHeight" placeholder="원본">
+          </div>
+        </div>
+        <label class="checkbox-group">
+          <input type="checkbox" id="keepAspect" checked>
+          비율 유지하여 크기 맞춤 (Fit)
+        </label>
+      </div>
+    </div>
+
+    <div class="btn-group" style="margin-top: auto;">
+      <button class="btn btn-primary" id="downloadBtn" disabled>
+        <span>💾</span> 저장 & 다운로드
+      </button>
+    </div>
+  </div>
+
+  <!-- 오른쪽 프리뷰 -->
+  <div class="preview-panel">
+    <div class="preview-toolbar">
+      <button class="toolbar-btn" id="btnZoomIn" title="확대" disabled>➕</button>
+      <button class="toolbar-btn" id="btnZoomOut" title="축소" disabled>➖</button>
+      <button class="toolbar-btn" id="btnRotateL" title="좌측 회전" disabled>↺</button>
+      <button class="toolbar-btn" id="btnRotateR" title="우측 회전" disabled>↻</button>
+      <button class="toolbar-btn" id="btnReset" title="초기화" disabled>🔄</button>
+    </div>
+    
+    <div class="preview-content">
+      <div class="preview-area">
+        <div class="placeholder" id="placeholder">
+          <div class="icon">✂️</div>
+          <p>이미지를 업로드하면 편집기가 활성화됩니다</p>
+        </div>
+        <img id="imageToCrop" src="" alt="Crop Area">
+      </div>
+    </div>
+    
+    <div class="status-bar">
+      <span id="statusText">대기 중</span>
+      <span id="imgInfo">원본: - / 자르기: -</span>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+<script>
+  let cropper = null;
+  let currentFile = null;
+  let originalMimeType = 'image/png';
+  
+  const fileInput = document.getElementById('fileInput');
+  const dropzone = document.getElementById('dropzone');
+  const filenameDisplay = document.getElementById('filename');
+  const imageToCrop = document.getElementById('imageToCrop');
+  const placeholder = document.getElementById('placeholder');
+  const downloadBtn = document.getElementById('downloadBtn');
+  
+  const targetWidth = document.getElementById('targetWidth');
+  const targetHeight = document.getElementById('targetHeight');
+  const keepAspect = document.getElementById('keepAspect');
+  
+  const statusText = document.getElementById('statusText');
+  const imgInfo = document.getElementById('imgInfo');
+  
+  // 툴바 버튼
+  const btnZoomIn = document.getElementById('btnZoomIn');
+  const btnZoomOut = document.getElementById('btnZoomOut');
+  const btnRotateL = document.getElementById('btnRotateL');
+  const btnRotateR = document.getElementById('btnRotateR');
+  const btnReset = document.getElementById('btnReset');
+  const toolbarBtns = [btnZoomIn, btnZoomOut, btnRotateL, btnRotateR, btnReset];
+
+  // 드래그앤드롭 이벤트
+  dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag'); });
+  dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag'));
+  dropzone.addEventListener('drop', e => {
+    e.preventDefault(); dropzone.classList.remove('drag');
+    if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+  });
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files[0]) handleFile(fileInput.files[0]);
+  });
+
+  function handleFile(file) {
+    if (!file.type.startsWith('image/')) {
+      alert('이미지 파일만 업로드 가능합니다.');
+      return;
+    }
+    currentFile = file;
+    originalMimeType = file.type || 'image/png';
+    filenameDisplay.textContent = file.name;
+    
+    const reader = new FileReader();
+    reader.onload = e => {
+      initCropper(e.target.result);
+    };
+    reader.readAsDataURL(file);
+    
+    statusText.textContent = '이미지 로드됨';
+  }
+
+  function initCropper(src) {
+    placeholder.style.display = 'none';
+    imageToCrop.style.display = 'block';
+    imageToCrop.src = src;
+    
+    if (cropper) {
+      cropper.destroy();
+    }
+    
+    // 현재 선택된 비율 찾기
+    const activeRatioBtn = document.querySelector('.ratio-btn.active');
+    const ratio = parseFloat(activeRatioBtn.dataset.ratio);
+    
+    cropper = new Cropper(imageToCrop, {
+      aspectRatio: isNaN(ratio) ? NaN : ratio,
+      viewMode: 1,
+      dragMode: 'crop',
+      autoCropArea: 0.9,
+      restore: false,
+      guides: true,
+      center: true,
+      highlight: false,
+      cropBoxMovable: true,
+      cropBoxResizable: true,
+      toggleDragModeOnDblclick: true,
+      crop(event) {
+        updateImageInfo();
+      },
+      ready() {
+        toolbarBtns.forEach(btn => btn.disabled = false);
+        downloadBtn.disabled = false;
+        
+        // 초기 크기를 input에 세팅 (비어있을 때만)
+        const data = cropper.getData(true);
+        if (!targetWidth.value) targetWidth.value = data.width;
+        if (!targetHeight.value) targetHeight.value = data.height;
+        
+        updateImageInfo();
+      }
+    });
+  }
+
+  function updateImageInfo() {
+    if (!cropper) return;
+    const canvasData = cropper.getCanvasData();
+    const cropData = cropper.getData(true);
+    imgInfo.textContent = `원본: ${Math.round(canvasData.naturalWidth)}x${Math.round(canvasData.naturalHeight)} / 선택영역: ${Math.round(cropData.width)}x${Math.round(cropData.height)}`;
+    
+    // 비율 유지 계산 (입력 필드가 비어있지 않고, 포커스 상태가 아닐 때만)
+    if (keepAspect.checked && document.activeElement !== targetWidth && document.activeElement !== targetHeight) {
+       targetWidth.value = cropData.width;
+       targetHeight.value = cropData.height;
+    }
+  }
+
+  // 비율 버튼 클릭
+  document.querySelectorAll('.ratio-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.ratio-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      if (cropper) {
+        const ratio = parseFloat(btn.dataset.ratio);
+        cropper.setAspectRatio(isNaN(ratio) ? NaN : ratio);
+      }
+    });
+  });
+
+  // 크기 입력 시 자동 계산
+  targetWidth.addEventListener('input', () => {
+    if (keepAspect.checked && cropper && targetWidth.value) {
+      const data = cropper.getData();
+      const aspectRatio = data.width / data.height;
+      targetHeight.value = Math.round(targetWidth.value / aspectRatio);
+    }
+  });
+
+  targetHeight.addEventListener('input', () => {
+    if (keepAspect.checked && cropper && targetHeight.value) {
+      const data = cropper.getData();
+      const aspectRatio = data.width / data.height;
+      targetWidth.value = Math.round(targetHeight.value * aspectRatio);
+    }
+  });
+  
+  keepAspect.addEventListener('change', () => {
+    if (keepAspect.checked) updateImageInfo();
+  });
+
+  // 툴바 이벤트
+  btnZoomIn.addEventListener('click', () => cropper && cropper.zoom(0.1));
+  btnZoomOut.addEventListener('click', () => cropper && cropper.zoom(-0.1));
+  btnRotateL.addEventListener('click', () => cropper && cropper.rotate(-90));
+  btnRotateR.addEventListener('click', () => cropper && cropper.rotate(90));
+  btnReset.addEventListener('click', () => {
+    if (cropper) {
+      cropper.reset();
+      targetWidth.value = '';
+      targetHeight.value = '';
+    }
+  });
+
+  // 다운로드
+  downloadBtn.addEventListener('click', () => {
+    if (!cropper) return;
+    
+    statusText.textContent = '이미지 처리 중...';
+    downloadBtn.disabled = true;
+    
+    setTimeout(() => {
+      try {
+        const tw = parseInt(targetWidth.value);
+        const th = parseInt(targetHeight.value);
+        
+        let canvasOptions = {
+          imageSmoothingEnabled: true,
+          imageSmoothingQuality: 'high',
+        };
+        
+        // 크기 지정이 있으면 적용
+        if (!isNaN(tw) && tw > 0) canvasOptions.width = tw;
+        if (!isNaN(th) && th > 0) canvasOptions.height = th;
+        
+        const canvas = cropper.getCroppedCanvas(canvasOptions);
+        
+        if (!canvas) {
+          throw new Error('Canvas 생성 실패');
+        }
+        
+        canvas.toBlob((blob) => {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          const baseName = currentFile ? currentFile.name.replace(/\.[^.]+$/, '') : 'cropped_image';
+          
+          let ext = 'png';
+          if (originalMimeType === 'image/jpeg') ext = 'jpg';
+          else if (originalMimeType === 'image/webp') ext = 'webp';
+          
+          a.href = url;
+          a.download = `${baseName}_edited.${ext}`;
+          a.click();
+          
+          URL.revokeObjectURL(url);
+          statusText.textContent = '다운로드 완료';
+          downloadBtn.disabled = false;
+        }, originalMimeType, 0.95);
+      } catch (err) {
+        console.error(err);
+        statusText.textContent = '오류 발생: ' + err.message;
+        downloadBtn.disabled = false;
+      }
+    }, 50);
+  });
+</script>
+</body>
+</html>
